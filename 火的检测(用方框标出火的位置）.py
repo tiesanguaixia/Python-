@@ -21,22 +21,25 @@ fourcc = cv2.VideoWriter_fourcc(*'XVID')
 i=1
 while True:
     (grabbed, frame) = video.read()
+    #检查视频是否播放完成，是则grabbed的值为False，循环结束
     if not grabbed:
         break
     i += 1
     #print(i)
+    #调整图像大小
     frame = cv2.resize(frame, (640,480))
 
     if i>0:
-        
+        #高斯滤波
         blur = cv2.GaussianBlur(frame, (15, 15), 0)
+        #转化hsv颜色空间
         hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
         lower = [0, 0, 200]
         upper = [35, 30,255]
         lower = np.array(lower, dtype="uint8")
         upper = np.array(upper, dtype="uint8")
         mask = cv2.inRange(hsv, lower, upper)
-
+        #inRange函数将hsv图像中的介于lower和upper的值变为255，将图像二值化，去除背景
         mask[:,:ROI_x] = np.zeros((height, ROI_x), np.int8);
         mask[:,ROI_xmax:] = np.zeros((height, width-ROI_xmax), np.int8);
         mask[:ROI_y,:] = np.zeros((ROI_y, width), np.int8);
@@ -46,12 +49,12 @@ while True:
 
         kernel1 = np.ones((3,3),np.uint8)
         kernel2 = np.ones((10,10),np.uint8)
-        mask = cv2.erode(mask,kernel1,iterations = 1)
-        mask = cv2.dilate(mask,kernel2,iterations = 5)
-        # mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        output = cv2.bitwise_and(frame, hsv, mask=mask)
+        mask = cv2.erode(mask,kernel1,iterations = 1)  #腐蚀操作
+        mask = cv2.dilate(mask,kernel2,iterations = 5) #膨胀操作
+        # mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)   开运算，即先腐蚀后膨胀
+        output = cv2.bitwise_and(frame, hsv, mask=mask)  #图像按位与
         cnt = cv2.findNonZero(mask)
-        if cnt is not None:
+        if cnt is not None:  #掩膜的点集非空
             rect = cv2.minAreaRect(cnt)
             box = cv2.boxPoints(rect)
             box = np.int0(box)
